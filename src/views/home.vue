@@ -16,6 +16,10 @@
     <br />
     <br />
 
+    <button @click="offMyCamera">
+      <b>Off cam</b>
+    </button>
+
     <!-- 
       Display video of the current user
       Note: mute your own video, otherwise you'll hear yourself ...
@@ -69,12 +73,15 @@ export default {
 
   data() {
     return {
+      userID: localStorage.getItem("userID"),
+
       connectedPeerID: undefined,
 
       // Ref to peerJS
       peer: undefined,
 
-      userID: localStorage.getItem("userID"),
+      localStream: undefined,
+
       // date: (function () {
       //   const now = new Date();
       //   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -112,8 +119,8 @@ export default {
 
     // Need to kill video on app close too
     requestLocalVideo(
-      function (stream) {
-        window.localStream = stream;
+      (stream) => {
+        this.localStream = stream;
         onReceiveStream(stream, "my-camera");
       },
 
@@ -175,6 +182,10 @@ export default {
     copyShareableLink() {
       // @todo Show something to indicate copied -> implement a Toastbox component
       navigator.clipboard.writeText(this.shareableLink).then(console.log);
+    },
+
+    offMyCamera() {
+      this.localStream.getTracks().forEach((track) => track.stop());
     },
 
     async connect() {
