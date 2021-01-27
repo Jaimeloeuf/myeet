@@ -16,6 +16,9 @@
     <br />
     <br />
 
+    <button @click="onMyCamera">
+      <b>On cam</b>
+    </button>
     <button @click="offMyCamera">
       <b>Off cam</b>
     </button>
@@ -68,6 +71,22 @@ import requestLocalVideo from "../utils/requestLocalVideo";
 
 import Peer from "peerjs";
 
+/**
+ * Handle the providen stream (video and audio) to the desired video element
+ *
+ * @param {*} stream
+ * @param {*} element_id
+ */
+function onReceiveStream(stream, element_id) {
+  // Retrieve the video element according to the desired
+  const video = document.getElementById(element_id);
+  // Set the given stream as the video source object
+  video.srcObject = stream;
+
+  // Store a global reference of the stream
+  // window.peer_stream = stream;
+}
+
 export default {
   name: "home",
 
@@ -97,38 +116,9 @@ export default {
   },
 
   mounted() {
-    /**
-     * Handle the providen stream (video and audio) to the desired video element
-     *
-     * @param {*} stream
-     * @param {*} element_id
-     */
-    function onReceiveStream(stream, element_id) {
-      // Retrieve the video element according to the desired
-      const video = document.getElementById(element_id);
-      // Set the given stream as the video source object
-      video.srcObject = stream;
-
-      // Store a global reference of the stream
-      // window.peer_stream = stream;
-    }
-
     // Omiting id to get a random one from the server.
     const peer = new Peer();
     this.peer = peer;
-
-    // Need to kill video on app close too
-    requestLocalVideo(
-      (stream) => {
-        this.localStream = stream;
-        onReceiveStream(stream, "my-camera");
-      },
-
-      function (err) {
-        alert("Cannot access your camera!");
-        console.error(err);
-      }
-    );
 
     peer.on("connection", (conn) => {
       conn.on("data", (data) => {
@@ -158,24 +148,6 @@ export default {
         }
       );
     });
-    //   navigator.mediaDevices.getUserMedia(
-    //     { video: true, audio: true },
-    //     (stream) => {
-    //       call.answer(stream); // Answer the call with an A/V stream.
-    //       call.on("stream", (remoteStream) => {
-    //         // Show stream in some <video> element.
-
-    //         // Store a global reference of the other user stream
-    //         window.peer_stream = stream;
-    //         // Display the stream of the other user in the peer-camera video element !
-    //         onReceiveStream(stream, "peer-camera");
-    //       });
-    //     },
-    //     (err) => {
-    //       console.error("Failed to get local stream", err);
-    //     }
-    //   );
-    // });
   },
 
   methods: {
@@ -184,6 +156,21 @@ export default {
       navigator.clipboard.writeText(this.shareableLink).then(console.log);
     },
 
+    onMyCamera() {
+      requestLocalVideo(
+        (stream) => {
+          this.localStream = stream;
+          onReceiveStream(stream, "my-camera");
+        },
+
+        function (err) {
+          alert("Cannot access your camera!");
+          console.error(err);
+        }
+      );
+    },
+
+    // @todo Need to kill video on app close too
     offMyCamera() {
       this.localStream.getTracks().forEach((track) => track.stop());
     },
