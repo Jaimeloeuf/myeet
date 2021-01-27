@@ -10,6 +10,9 @@
       <button @click="copyShareableLink">
         <b>{{ shareableLink }}</b>
       </button>
+      <button @click="shareLink">
+        <b>Share Link</b>
+      </button>
 
       <!-- @todo Add a share button -->
     </p>
@@ -24,8 +27,6 @@
     </button>
 
     <div>
-      <!-- 
-    <!-- 
       <!-- 
         Video of the current user
         Video is muted, otherwise you'll hear yourself ...
@@ -56,6 +57,21 @@
 
     <br />
     <br />
+
+    <div id="buttons">
+      <input
+        v-model="connectedPeerID"
+        type="text"
+        placeholder="Peer ID"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+
+      <button @click="endCall" id="submitButton">Close</button>
+      <button @click="startCall" id="submitButton">Call</button>
+    </div>
 
     <!-- <div id="buttons">
       <button @click="logout" id="logoutButton">Logout</button>
@@ -93,7 +109,9 @@ export default {
       // Ref to peerJS
       peer: undefined,
 
+      // MediaStream object's of webcam stream and peer's webcam stream
       localStream: undefined,
+      otherStream: undefined,
 
       // date: (function () {
       //   const now = new Date();
@@ -123,6 +141,17 @@ export default {
       navigator.clipboard.writeText(this.shareableLink).then(console.log);
     },
 
+    async shareLink() {
+      if (!navigator.share)
+        alert("Native sharing not available on your device");
+
+      await navigator.share({
+        // url: this.shareableLink,
+        // Send a sentence instead of the id only....
+        text: this.peer.id,
+      });
+    },
+
     onMyCamera() {
       requestLocalVideo(
         (stream) => {
@@ -147,7 +176,8 @@ export default {
       // Call a peer, providing our local mediaStream
       const call = this.peer.call(this.connectedPeerID, this.localStream);
       call.on("stream", function (stream) {
-        this.remoteStream = stream;
+        this.otherStream = stream;
+        console.log("Call responded!", stream);
         // `stream` is the MediaStream of the remote peer.
         // Add it to our HTML video element
         passStreamToVideoElement(stream, "peer-camera");
@@ -156,19 +186,21 @@ export default {
 
     // Answer a call from a peer
     answerCall(call) {
+      if (!confirm("Incoming call!")) return;
+
       // Answer the call, providing our mediaStream
       call.answer(this.localStream);
+      call.on("stream", function (stream) {
+        this.otherStream = stream;
+        // `stream` is the MediaStream of the remote peer.
+        // Add it to our HTML video element
+        passStreamToVideoElement(stream, "peer-camera");
+      });
     },
 
-    // Connect to a remote peer
-    // async connect() {
-    //   const conn = this.peer.connect(this.peerID);
-
-    //   conn.on("open", () => {
-    //     alert("connected");
-    //     conn.send("hi!");
-    //   });
-    // },
+    endCall() {
+      this.peer.call.close();
+    },
 
     logout,
   },
