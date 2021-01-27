@@ -23,12 +23,14 @@
       <b>Off cam</b>
     </button>
 
+    <div>
+      <!-- 
     <!-- 
-      Display video of the current user
-      Note: mute your own video, otherwise you'll hear yourself ...
-    -->
-    <div class="text-center">
-      <!-- Attributes are needed to prevent video from freezing on the first frame on iOS safari -->
+      <!-- 
+        Video of the current user
+        Video is muted, otherwise you'll hear yourself ...
+        Attributes are needed to prevent video from freezing on the first frame on iOS safari
+      -->
       <video
         id="my-camera"
         width="100%"
@@ -44,10 +46,10 @@
     <br />
     <br />
 
-    <!-- Display video of the connected peer -->
-    <div class="text-center">
-      <video id="peer-camera" width="100%" height="100%" autoplay="autoplay" />
-      <span class="label label-info" id="connectedPeerID">
+    <div>
+      <!-- Video of the connected peer -->
+      <video id="peer-camera" width="100%" height="100%" autoplay playsinline />
+      <span id="connectedPeerID">
         {{ connectedPeerID || "Not connected yet" }}
       </span>
     </div>
@@ -71,20 +73,12 @@ import requestLocalVideo from "../utils/requestLocalVideo";
 
 import Peer from "peerjs";
 
-/**
- * Handle the providen stream (video and audio) to the desired video element
- *
- * @param {*} stream
- * @param {*} element_id
- */
-function onReceiveStream(stream, element_id) {
-  // Retrieve the video element according to the desired
-  const video = document.getElementById(element_id);
-  // Set the given stream as the video source object
+// Pass the provided stream (video and audio) to the desired video element
+function passStreamToVideoElement(stream, elementID) {
+  // Retrieve video element using the element's HTML ID
+  const video = document.getElementById(elementID);
+  // Set given stream as the video source object
   video.srcObject = stream;
-
-  // Store a global reference of the stream
-  // window.peer_stream = stream;
 }
 
 export default {
@@ -111,7 +105,7 @@ export default {
 
   computed: {
     shareableLink() {
-      return "https://app.vroom.com/?callUser=" + this.peer.id;
+      return "https://app.myeet.me/?callUser=" + this.peer.id;
     },
   },
 
@@ -120,34 +114,7 @@ export default {
     const peer = new Peer();
     this.peer = peer;
 
-    peer.on("connection", (conn) => {
-      conn.on("data", (data) => {
-        // Will print 'hi!'
-        console.log(data);
-      });
-      conn.on("open", () => {
-        conn.send("hello!");
-      });
-    });
-
-    peer.on("call", (call) => {
-      requestLocalVideo(
-        (stream) => {
-          call.answer(stream); // Answer the call with an A/V stream.
-          call.on("stream", (remoteStream) => {
-            // Show stream in some <video> element.
-
-            // Store a global reference of the other user stream
-            window.peer_stream = stream;
-            // Display the stream of the other user in the peer-camera video element !
-            onReceiveStream(stream, "peer-camera");
-          });
-        },
-        (err) => {
-          console.error("Failed to get local stream", err);
-        }
-      );
-    });
+    peer.on("call", this.answerCall);
   },
 
   methods: {
@@ -160,7 +127,7 @@ export default {
       requestLocalVideo(
         (stream) => {
           this.localStream = stream;
-          onReceiveStream(stream, "my-camera");
+          passStreamToVideoElement(stream, "my-camera");
         },
 
         function (err) {
@@ -175,16 +142,33 @@ export default {
       this.localStream.getTracks().forEach((track) => track.stop());
     },
 
-    async connect() {
-      const conn = this.peer.connect(this.peerID);
-
-      conn.on("open", () => {
-        alert("connected");
-        conn.send("hi!");
+    // Call a peer
+    startCall() {
+      // Call a peer, providing our local mediaStream
+      const call = this.peer.call(this.connectedPeerID, this.localStream);
+      call.on("stream", function (stream) {
+        this.remoteStream = stream;
+        // `stream` is the MediaStream of the remote peer.
+        // Add it to our HTML video element
+        passStreamToVideoElement(stream, "peer-camera");
       });
     },
 
-    async answer() {},
+    // Answer a call from a peer
+    answerCall(call) {
+      // Answer the call, providing our mediaStream
+      call.answer(this.localStream);
+    },
+
+    // Connect to a remote peer
+    // async connect() {
+    //   const conn = this.peer.connect(this.peerID);
+
+    //   conn.on("open", () => {
+    //     alert("connected");
+    //     conn.send("hi!");
+    //   });
+    // },
 
     logout,
   },
