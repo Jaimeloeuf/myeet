@@ -10,7 +10,7 @@
       <button @click="copyShareableLink">
         <b>{{ shareableLink }}</b>
       </button>
-      <button @click="shareLink">
+      <button v-if="nativeShareAvail" @click="shareLink">
         <b>Share Link</b>
       </button>
 
@@ -122,6 +122,10 @@ export default {
   },
 
   computed: {
+    nativeShareAvail() {
+      return !!navigator.share;
+    },
+
     shareableLink() {
       return "https://app.myeet.me/?callUser=" + this.peer.id;
     },
