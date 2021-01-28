@@ -16,6 +16,10 @@ Vue.directive("autofocus", autofocus);
 
 // firebaseConfig auto generated in project settings
 firebase.initializeApp({
+  apiKey: "AIzaSyDK33__mcWGYOYvZgFh4XJshp0JPgDKyKI",
+  authDomain: "myeet-me.firebaseapp.com",
+  projectId: "myeet-me",
+  appId: "1:222716799948:web:f9c2abd6de70f339538b69",
 });
 
 // App variable to store reference to the vue App object
