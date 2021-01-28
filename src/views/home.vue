@@ -27,6 +27,9 @@
     </button>
 
     <div>
+      <!-- @todo Make this overlay -->
+      <p>You</p>
+
       <!-- 
         Video of the current user
         Video is muted, otherwise you'll hear yourself ...
@@ -40,16 +43,13 @@
         autoplay
         playsinline
       />
-      <!-- Make this overlay -->
-      <p>You</p>
     </div>
-
-    <br />
-    <br />
 
     <div>
       <!-- Video of the connected peer -->
       <video id="peer-camera" width="100%" height="100%" autoplay playsinline />
+
+      <!-- @todo Make this overlay -->
       <span id="connectedPeerID">
         {{ connectedPeerID || "Not connected yet" }}
       </span>
@@ -81,7 +81,7 @@
 
 <script>
 import logout from "../utils/logout";
-import requestLocalVideo from "../utils/requestLocalVideo";
+import requestLocalMedia from "../utils/requestLocalMedia";
 
 import Peer from "peerjs";
 
@@ -123,7 +123,7 @@ export default {
     },
 
     shareableLink() {
-      return "https://app.myeet.me/?callUser=" + this.peer.id;
+      return "https://myeet-me.web.app/?callUser=" + this.peer.id;
     },
   },
 
@@ -141,29 +141,30 @@ export default {
       navigator.clipboard.writeText(this.shareableLink).then(console.log);
     },
 
-    async shareLink() {
+    shareLink() {
+      // Additional safe gaurd here
       if (!navigator.share)
         alert("Native sharing not available on your device");
 
-      await navigator.share({
-        // url: this.shareableLink,
-        // Send a sentence instead of the id only....
-        text: this.peer.id,
-      });
+      // Catch block with a no-op because if the user cancels/quits the share UI, it is treated as an error
+      navigator
+        .share({
+          url: this.shareableLink,
+          // @todo Send a sentence instead of the id only....
+          // text: this.peer.id,
+        })
+        .catch(() => {});
     },
 
-    onMyCamera() {
-      requestLocalVideo(
-        (stream) => {
-          this.localStream = stream;
-          passStreamToVideoElement(stream, "my-camera");
-        },
-
-        function (err) {
-          alert("Cannot access your camera!");
-          console.error(err);
-        }
-      );
+    // Await for it to set the local MediaStream onto the vue object
+    async onMyCamera() {
+      try {
+        this.localStream = await requestLocalMedia();
+        passStreamToVideoElement(this.localStream, "my-camera");
+      } catch (err) {
+        console.error(err);
+        alert("Cannot access your camera!");
+      }
     },
 
     // @todo Need to kill video on app close too
@@ -172,9 +173,18 @@ export default {
     },
 
     // Call a peer
-    startCall() {
-      // Call a peer, providing our local mediaStream
-      const call = this.peer.call(this.connectedPeerID, this.localStream);
+    async startCall(peerID) {
+      // @todo Only run this if camera is not already on
+      // @todo If user choose to not on their camera, create a voice only media stream
+      // Ensure video feed is started before calling peer.call
+      // Await to ensure mediaStream is created before running peer.call, as that will fail with a invalid mediaStream
+      await this.onMyCamera();
+
+      // Call a peer with our local mediaStream
+      const call = this.peer.call(
+        peerID || this.connectedPeerID,
+        this.localStream
+      );
 
       // Attach MediaStream of the remote peer to the peer's video element
       call.on("stream", (remoteStream) => {
@@ -211,6 +221,11 @@ export default {
 </script>
 
 <style scoped>
+video {
+  border: 1px solid rgb(228, 228, 228);
+  margin: 0;
+}
+
 /* To make the video mirrored */
 video {
   transform: rotateY(180deg);
