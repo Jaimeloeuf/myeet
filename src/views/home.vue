@@ -73,13 +73,9 @@
       <button @click="startCall" id="submitButton">Call</button>
     </div>
 
-    <!-- <div id="buttons">
+    <div id="buttons">
       <button @click="logout" id="logoutButton">Logout</button>
-
-      <button @click="submitButtonEventHandler" id="submitButton">
-        Submit
-      </button>
-    </div> -->
+    </div>
   </div>
 </template>
 
@@ -179,12 +175,13 @@ export default {
     startCall() {
       // Call a peer, providing our local mediaStream
       const call = this.peer.call(this.connectedPeerID, this.localStream);
-      call.on("stream", function (stream) {
-        this.otherStream = stream;
-        console.log("Call responded!", stream);
-        // `stream` is the MediaStream of the remote peer.
+
+      // Attach MediaStream of the remote peer to the peer's video element
+      call.on("stream", (remoteStream) => {
+        this.otherStream = remoteStream;
+
         // Add it to our HTML video element
-        passStreamToVideoElement(stream, "peer-camera");
+        passStreamToVideoElement(remoteStream, "peer-camera");
       });
     },
 
@@ -194,11 +191,13 @@ export default {
 
       // Answer the call, providing our mediaStream
       call.answer(this.localStream);
-      call.on("stream", function (stream) {
-        this.otherStream = stream;
-        // `stream` is the MediaStream of the remote peer.
+
+      // Attach MediaStream of the remote peer to the peer's video element
+      call.on("stream", (remoteStream) => {
+        this.otherStream = remoteStream;
+
         // Add it to our HTML video element
-        passStreamToVideoElement(stream, "peer-camera");
+        passStreamToVideoElement(remoteStream, "peer-camera");
       });
     },
 
