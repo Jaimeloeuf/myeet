@@ -82,7 +82,9 @@
       />
 
       <button @click="endCall" id="submitButton">Close</button>
-      <button @click="startCall" id="submitButton">Call</button>
+      <button @click="startCall(connectedPeerID)" id="submitButton">
+        Call
+      </button>
     </div>
 
     <div id="buttons">
@@ -169,19 +171,21 @@ export default {
       this.localStream.getTracks().forEach((track) => track.stop());
     },
 
-    // Call a peer
+    /**
+     * Call a peer
+     *
+     * Always pass in the peerID, because when this method is used directly in the event handler attribute of the HTML element
+     * The mouse click event object will be passed in as the first arguement instead.
+     */
     async startCall(peerID) {
-      // @todo Only run this if camera is not already on
       // @todo If user choose to not on their camera, create a voice only media stream
+      // Only run this if camera is not already on
       // Ensure video feed is started before calling peer.call
       // Await to ensure mediaStream is created before running peer.call, as that will fail with a invalid mediaStream
-      await this.onMyCamera();
+      if (!this.localStream) await this.onMyCamera();
 
       // Call a peer with our local mediaStream
-      const call = this.peer.call(
-        peerID || this.connectedPeerID,
-        this.localStream
-      );
+      const call = this.peer.call(peerID, this.localStream);
 
       // Attach MediaStream of the remote peer to the peer's video element
       call.on("stream", (remoteStream) => {
@@ -193,8 +197,15 @@ export default {
     },
 
     // Answer a call from a peer
-    answerCall(call) {
+    async answerCall(call) {
+      // Send over a userID, so we know who is calling....
       if (!confirm("Incoming call!")) return;
+
+      // @todo If user choose to not on their camera, create a voice only media stream
+      // Only run this if camera is not already on
+      // Ensure video feed is started before calling peer.call
+      // Await to ensure mediaStream is created before running peer.call, as that will fail with a invalid mediaStream
+      if (!this.localStream) await this.onMyCamera();
 
       // Answer the call, providing our mediaStream
       call.answer(this.localStream);
