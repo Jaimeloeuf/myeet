@@ -10,7 +10,16 @@
       <button @click="copyShareableLink">
         <b>{{ shareableLink }}</b>
       </button>
-      <button v-if="nativeShareAvail" @click="shareLink">
+      <button
+        v-if="nativeShareAvailable"
+        @click="
+          nativeShare({
+            url: shareableLink,
+            // @todo Send a sentence instead of the id only....
+            // text: peer.id,
+          })
+        "
+      >
         <b>Share Link</b>
       </button>
 
@@ -82,6 +91,7 @@
 <script>
 import logout from "../utils/logout";
 import requestLocalMedia from "../utils/requestLocalMedia";
+import { nativeShareAvailable, nativeShare } from "../utils/nativeShare";
 
 import Peer from "peerjs";
 
@@ -98,6 +108,8 @@ export default {
 
   data() {
     return {
+      nativeShareAvailable,
+
       userID: localStorage.getItem("userID"),
 
       connectedPeerID: undefined,
@@ -118,12 +130,8 @@ export default {
   },
 
   computed: {
-    nativeShareAvail() {
-      return !!navigator.share;
-    },
-
     shareableLink() {
-      return "https://myeet-me.web.app/?callUser=" + this.peer.id;
+      return "https://myeet-me.web.app/#home/?callUser=" + this.peer.id;
     },
   },
 
@@ -141,20 +149,7 @@ export default {
       navigator.clipboard.writeText(this.shareableLink).then(console.log);
     },
 
-    shareLink() {
-      // Additional safe gaurd here
-      if (!navigator.share)
-        alert("Native sharing not available on your device");
-
-      // Catch block with a no-op because if the user cancels/quits the share UI, it is treated as an error
-      navigator
-        .share({
-          url: this.shareableLink,
-          // @todo Send a sentence instead of the id only....
-          // text: this.peer.id,
-        })
-        .catch(() => {});
-    },
+    nativeShare,
 
     // Await for it to set the local MediaStream onto the vue object
     async onMyCamera() {
@@ -223,7 +218,6 @@ export default {
 <style scoped>
 video {
   border: 1px solid rgb(228, 228, 228);
-  margin: 0;
 }
 
 /* To make the video mirrored */
