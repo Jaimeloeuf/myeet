@@ -112,6 +112,8 @@ function passStreamToVideoElement(stream, elementID) {
 export default {
   name: "home",
 
+  props: ["callUser"],
+
   data() {
     return {
       clipboardAvailable,
@@ -148,6 +150,10 @@ export default {
     this.peer = peer;
 
     peer.on("call", this.answerCall);
+
+    // If app is loaded via a link from a peer to call them
+    if (this.callUser && confirm("Call your friend?"))
+      this.startCall(this.callUser);
   },
 
   methods: {

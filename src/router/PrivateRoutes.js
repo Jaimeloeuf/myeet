@@ -7,6 +7,7 @@ const routes = [
     path: "/home",
     component: () => import("@/views/home.vue"),
     meta: { Auth_requirements: AuthType.private },
+    props: (route) => route.query,
   },
 ];
 
