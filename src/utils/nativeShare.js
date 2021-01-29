@@ -9,7 +9,8 @@ export function nativeShare(
   }
 ) {
   // Additional safe gaurd here
-  if (!navigator.share) alert("Native sharing not available on your device");
+  if (!navigator.share)
+    return alert("[ERR] Native sharing not available on your device");
 
   // Catch block with a no-op because if the user cancels/quits the share UI, it is treated as an error
   navigator.share(content).catch(() => {});

@@ -7,7 +7,10 @@
       <small> Share the following link with your pal to call! </small>
       <br />
       Link:
-      <button @click="copyShareableLink">
+      <button
+        v-if="clipboardAvailable"
+        @click="writeToClipboard(shareableLink)"
+      >
         <b>{{ shareableLink }}</b>
       </button>
       <button
@@ -91,6 +94,7 @@
 <script>
 import logout from "../utils/logout";
 import requestLocalMedia from "../utils/requestLocalMedia";
+import { clipboardAvailable, writeToClipboard } from "../utils/clipboard";
 import { nativeShareAvailable, nativeShare } from "../utils/nativeShare";
 
 import Peer from "peerjs";
@@ -108,6 +112,7 @@ export default {
 
   data() {
     return {
+      clipboardAvailable,
       nativeShareAvailable,
 
       userID: localStorage.getItem("userID"),
@@ -144,11 +149,8 @@ export default {
   },
 
   methods: {
-    copyShareableLink() {
-      // @todo Show something to indicate copied -> implement a Toastbox component
-      navigator.clipboard.writeText(this.shareableLink).then(console.log);
-    },
-
+    // @todo Show something to indicate copied -> implement a Toastbox component
+    writeToClipboard,
     nativeShare,
 
     // Await for it to set the local MediaStream onto the vue object
